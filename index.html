@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+        <title>reveal-md</title>
+        <link rel="stylesheet" href="./css/reveal.css">
+        <link rel="stylesheet" href="./css/theme/black.css" id="theme">
+        <link rel="stylesheet" href="./css/highlight/zenburn.css">
+        <link rel="stylesheet" href="./css/print/paper.css" type="text/css" media="print">
+
+
+    </head>
+    <body>
+
+        <div class="reveal">
+            <div class="slides"><section  data-markdown><script type="text/template"><!--
+- title : representer correctement des donnees
+- description :
+- author : 
+- theme : solarized.css
+- transition : convex
+- slideNumber : true -->
+
+<style type="text/css">
+  .reveal li code { font-size:  100%; width : 600pt; }
+</style>
+
+
+# representer correctement des donnees
+
+
+</script></section><section  data-markdown><script type="text/template">
+## Premiere approche
+
+
+```elm
+
+type alias Date  = {jour : Int , mois : Int}
+
+
+
+```</script></section><section ><section data-markdown><script type="text/template">Quel est le probleme
+
+- jour est un entier relatif , or il doit etre dans intervalle dependant du mois
+- mois est un entier relatif, or il doit etre compris entre 1 et 12
+</script></section><section data-markdown><script type="text/template">
+Exemples _
+
+```elm
+(jour = 11 , mois = 12) est une date valide 
+```
+mais
+```elm
+(jour = -2,jour =  36) est aussi une date valide ...
+```</script></section></section><section  data-markdown><script type="text/template">
+Debut de solution
+
+- Representer les mois sous forme d une enumeration
+``` elm
+type Mois = Janvier
+            |Fevrier
+            |Mars
+            |Avril
+            .
+            .
+            .
+```
+
+</script></section><section ><section data-markdown><script type="text/template">
+Cela ne repond qu a la moitie du probleme
+il faut aussi avoir un jour qui a du sens
+
+On aura besoin d une fonction permettant permettant
+pour chaque element de type Mois d avoir les informations le concernant :
+
+``` elm
+listeInfoMois : Mois -> {mois : Mois , numeroDuMois : Int, nombreDeJours : Int}
+listeInfoMois m = 
+        case m of
+            Janvier  -> {mois = Janvier , numeroDuMois =1 , nombreDeJours = 31}
+            Fevrier  -> {mois = Fevrier , numeroDuMois =2 , nombreDeJours = 27}
+            Mars     -> {mois = Mars    , numeroDuMois =3 , nombreDeJours = 31} 
+            .
+            .
+            .
+```
+</script></section><section data-markdown><script type="text/template">premiere solution
+```elm
+jourDateValide : Date -> Maybe Date
+jourDateValide date = 
+    let 
+        jour = date.jour
+        mois = date.mois 
+    in
+        if (jour> 0 && jour <= (listeInfoMois mois).nombreDeJours)
+        then Just date
+        else Nothing
+
+```
+probleme : sous cette forme ce n est pas un type
+</script></section><section data-markdown><script type="text/template">
+Autre Solution
+
+```elm
+module Odd exposing (newDate,Date,DateAlias, dateVersAlias)
+
+type alias DateAlias  = {jour : Int ,  mois : Mois}
+type Date = D {jour : Int ,  mois : Mois}
+newDate : DateAlias -> Maybe Date
+newDate date = 
+    let 
+        jour = date.jour
+        mois = date.mois 
+    in
+        if (jour> 0 && jour <= (listeInfoMois mois).nombreDeJours) then Just (D date)
+        else Nothing
+```
+</script></section></section><section ><section data-markdown><script type="text/template">
+Avantage
+Avec cette forme on a la garantie que pour toute date
+entree elle sera soit valide et sera traitee
+soit invalide et ne renverra rien
+</script></section><section data-markdown><script type="text/template">
+
+
+Ce que l on peut faire 
+
+- Creer un calendrier
+    - Un calendrier est une liste de couples {date, evenement}
+```elm
+    type  alias  Calendrier  = List{ date : { jour : Int , mois : Mois }
+                                , evenement : Evenement}
+```</script></section></section><section ><section data-markdown><script type="text/template">    - Concernant les evenements il faut pouvoir :
+        - ajouter un evenement a une date
+        - ajouter un evenement sur un intervalle de date
+</script></section><section data-markdown><script type="text/template">```elm
+ajoutEvenement : Calendrier -> Evenement -> Maybe Date -> Calendrier 
+ajoutEvenement cal evt date = 
+    case date of
+        Just date -> 
+            let  
+                jour  = (dateVersAlias  date).jour
+                mois  = (dateVersAlias  date).mois
+            in [{ date = {jour = jour, mois = mois},evenement = evt}]
+        Nothing   -> cal
+
+```</script></section><section data-markdown><script type="text/template">  ```elm
+  repeterEvenement : Calendrier -> Evenement -> Maybe Date -> Maybe Date -> Calendrier
+  repeterEvenement cal evt date1 date2 =
+    case (date1,date2) of 
+        (Just date1,Just date2) ->
+            let (jour1,mois1, jour2 , mois2) = ((dateVersAlias  date1).jour,(dateVersAlias  date1).mois,(dateVersAlias  date2).jour,(dateVersAlias  date2).mois)
+            in
+                if (mois1 == mois2 )
+                    then
+                    if (jour1<=jour2)
+                    then List.append (ajoutEvenement cal evt (Just date1)) (repeterEvenement cal evt (jourSuivant (Just date1)) (Just date2) )
+                    else  cal
+                else
+                    if (jour1 <(listeInfoMois mois1).nombreDeJours)
+                    then  {date = {jour = jour1 + 1, mois = mois1} ,evenement = evt} :: (repeterEvenement cal evt (jourSuivant (Just date1)) (Just date2 ))
+                    else {date = {jour = 1 , mois = complete ( (listeInfoMois mois1).numeroDuMois + 1 ) correspondances} ,evenement = evt} :: (repeterEvenement cal evt (jourSuivant (Just date1) ) (Just date2) )
+
+        (_, _) -> cal
+```</script></section></section><section ><section data-markdown><script type="text/template">    Exemples
+```elm
+      sortie1  : Evenement
+      sortie1 = 
+      Sortie {qui = {nom = "p",prenom= ""} , lieu = "paris" , description = "cine"}
+
+      evt : Evenement
+      evt = Vacances
+
+      date1  : Maybe Date
+      date1 =   newDate {jour  = 15, mois = Octobre}
+
+      date2  : Maybe Date
+      date2 =  newDate {jour  = 4, mois = Novembre}
+
+      vacances1 : Calendrier
+      vacances1 = repeterEvenement cal evt date1 date2
+
+      anniversaire1 : Calendrier
+      anniversaire1 = [ {date =  {jour  = 19, mois = Octobre}, 
+      evenement = Anniversaire  { nom  = "No" , prenom = "Pr"}}]
+
+      calendrier2 : Calendrier 
+      calendrier2 = triCalendrier (List.append vacances1 anniversaire1)
+      s = parcoursCalendrier calendrier2
+  ```</script></section><section data-markdown><script type="text/template">
+</script></section></section></div>
+        </div>
+
+        <script src="./lib/js/head.min.js"></script>
+        <script src="./js/reveal.js"></script>
+
+        <script>
+            function extend() {
+              var target = {};
+              for (var i = 0; i < arguments.length; i++) {
+                var source = arguments[i];
+                for (var key in source) {
+                  if (source.hasOwnProperty(key)) {
+                    target[key] = source[key];
+                  }
+                }
+              }
+              return target;
+            }
+
+            // Optional libraries used to extend on reveal.js
+            var deps = [
+              { src: './lib/js/classList.js', condition: function() { return !document.body.classList; } },
+              { src: './plugin/markdown/marked.js', condition: function() { return !!document.querySelector('[data-markdown]'); } },
+              { src: './plugin/markdown/markdown.js', condition: function() { return !!document.querySelector('[data-markdown]'); } },
+              { src: './plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+              { src: './plugin/zoom-js/zoom.js', async: true },
+              { src: './plugin/notes/notes.js', async: true },
+              { src: './plugin/math/math.js', async: true }
+            ];
+
+            // default options to init reveal.js
+            var defaultOptions = {
+              controls: true,
+              progress: true,
+              history: true,
+              center: true,
+              transition: 'default', // none/fade/slide/convex/concave/zoom
+              dependencies: deps
+            };
+
+            // options from URL query string
+            var queryOptions = Reveal.getQueryHash() || {};
+
+            var options = {"width":1200,"height":800,"margin":0.08,"minScale":0.5,"maxScale":2};
+            options = extend(defaultOptions, options, queryOptions);
+        </script>
+
+
+        <script>
+          Reveal.initialize(options);
+        </script>
+    </body>
+</html>
