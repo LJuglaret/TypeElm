@@ -180,24 +180,24 @@ repeterEvenement cal evt date1 date2 =
       evt : Evenement
       evt = Vacances
 
-date1  : Maybe Date
-date1 =   newDate {jour  = 15, mois = Octobre}
+    date1  : Maybe Date
+    date1 =   newDate {jour  = 15, mois = Octobre}
 
-date2  : Maybe Date
-date2 =  newDate {jour  = 4, mois = Novembre}
+    date2  : Maybe Date
+    date2 =  newDate {jour  = 4, mois = Novembre}
 
-vacances1 : Calendrier
-vacances1 = repeterEvenement cal evt date1 date2
+    vacances1 : Calendrier
+    vacances1 = repeterEvenement cal evt date1 date2
 
-anniversaire1 : Calendrier
-anniversaire1 = [ {date =  {jour  = 19, mois = Octobre}, 
-     evenement = Anniversaire  { nom  = "No" , prenom = "Pr"}
-     }
-    ]
+    anniversaire1 : Calendrier
+    anniversaire1 = [ {date =  {jour  = 19, mois = Octobre}, 
+         evenement = Anniversaire  { nom  = "No" , prenom = "Pr"}
+         }
+        ]
 
-calendrier2 : Calendrier 
-calendrier2 = triCalendrier (List.append vacances1 anniversaire1)
-s = parcoursCalendrier calendrier2
+    calendrier2 : Calendrier 
+    calendrier2 = triCalendrier (List.append vacances1 anniversaire1)
+    s = parcoursCalendrier calendrier2
     ```
 ----
 
