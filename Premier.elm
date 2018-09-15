@@ -13,3 +13,17 @@ newPremier x =
 versPremier : Premier -> Int 
 versPremier (C x) = x
 
+
+listPremiers : Int -> Int -> List Premier
+listPremiers d a = 
+    let dI = newPremier d 
+    in 
+        case dI of
+            Just dI ->
+                if (d < a ) then dI:: (listPremiers (d + 1) a )
+                else
+                    if (d == a ) then [dI]
+                    else listPremiers a d
+            Nothing -> listPremiers (d + 1) a 
+
+testl1 =listPremiers 9 17
